@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JACA SIMULATOR — O Simulador Mais Realista de Ser uma Jaca</title>
+<style>
+  :root{
+    --verde-jaca:#8fa33a;
+    --amarelo-jaca:#d9c441;
+    --marrom:#5b3a1a;
+    --ouro:#e8c547;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Georgia','Times New Roman',serif;color:#fff;}
+
+  /* ===== MENU INICIAL ESTILO AAA ===== */
+  #menu{
+    position:fixed;inset:0;z-index:100;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:
+      radial-gradient(ellipse at 50% 30%, rgba(217,196,65,0.18), transparent 60%),
+      radial-gradient(ellipse at 50% 90%, rgba(0,0,0,0.85), transparent 70%),
+      linear-gradient(180deg,#1a2a12 0%,#0d150a 60%,#05080a 100%);
+    text-align:center;padding:20px;
+  }
+  #menu::before{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0 2px, transparent 2px 4px);
+    mix-blend-mode:overlay;
+  }
+  .titulo{
+    font-size:clamp(2.8rem,11vw,7rem);font-weight:900;letter-spacing:0.08em;
+    color:var(--ouro);
+    text-shadow:
+      0 0 18px rgba(232,197,71,0.55),
+      0 0 40px rgba(143,163,58,0.45),
+      4px 5px 0 #000,
+      8px 9px 0 rgba(0,0,0,0.6);
+    line-height:0.95;
+    animation:flicker 5s infinite;
+  }
+  .titulo .linha2{display:block;color:var(--verde-jaca);text-shadow:0 0 16px rgba(143,163,58,0.6),4px 5px 0 #000;}
+  @keyframes flicker{
+    0%,93%,100%{opacity:1;}
+    94%{opacity:0.7;}95%{opacity:1;}96%{opacity:0.85;}97%{opacity:1;}
+  }
+  .subtitulo{
+    margin-top:14px;font-size:clamp(0.8rem,2.4vw,1.15rem);font-style:italic;
+    color:#cfd8c0;letter-spacing:0.04em;max-width:680px;
+  }
+  .selo{
+    margin-top:10px;font-size:0.7rem;letter-spacing:0.3em;color:#9aa988;
+    border:1px solid rgba(232,197,71,0.3);padding:4px 12px;border-radius:2px;
+  }
+  .botoes-menu{margin-top:34px;display:flex;flex-direction:column;gap:14px;width:min(360px,90vw);}
+  .btn-aaa{
+    display:block;width:100%;padding:16px 18px;cursor:pointer;
+    background:linear-gradient(180deg,rgba(40,56,24,0.95),rgba(18,26,12,0.95));
+    border:1px solid rgba(232,197,71,0.5);border-radius:4px;
+    color:#f2e9c8;font-family:inherit;font-size:1.05rem;letter-spacing:0.06em;
+    text-transform:uppercase;transition:all .2s ease;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.08), 0 4px 14px rgba(0,0,0,0.6);
+  }
+  .btn-aaa small{display:block;font-size:0.72rem;opacity:0.7;margin-top:4px;letter-spacing:0.02em;text-transform:none;}
+  .btn-aaa:hover{
+    background:linear-gradient(180deg,rgba(60,80,35,0.95),rgba(28,40,18,0.95));
+    border-color:var(--ouro);color:#fff;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.12), 0 6px 22px rgba(232,197,71,0.35);
+    transform:translateY(-1px);
+  }
+  .rodape-menu{margin-top:30px;font-size:0.72rem;color:#6f7a5e;}
+  .rodape-menu a{color:#9aa988;}
+
+  /* ===== HUD DO JOGO ===== */
+  #hud{position:fixed;inset:0;z-index:40;pointer-events:none;display:none;}
+  #hud.ativo{display:block;}
+  #cronometro{
+    position:absolute;top:14px;left:14px;
+    background:rgba(0,0,0,0.45);padding:8px 14px;border-radius:6px;
+    border:1px solid rgba(255,255,255,0.12);
+    font-size:0.85rem;letter-spacing:0.04em;
+    backdrop-filter:blur(4px);
+  }
+  #cronometro b{color:var(--ouro);font-size:1rem;}
+  #btnVoltar{
+    position:absolute;top:14px;right:14px;pointer-events:auto;
+    background:rgba(0,0,0,0.45);color:#fff;border:1px solid rgba(255,255,255,0.18);
+    padding:8px 14px;border-radius:6px;cursor:pointer;font-family:inherit;font-size:0.85rem;
+    backdrop-filter:blur(4px);
+  }
+  #btnConquistas{
+    position:absolute;top:54px;right:14px;pointer-events:auto;
+    background:rgba(0,0,0,0.45);color:#fff;border:1px solid rgba(255,255,255,0.18);
+    padding:8px 14px;border-radius:6px;cursor:pointer;font-family:inherit;font-size:0.85rem;
+    backdrop-filter:blur(4px);
+  }
+  #btnRealista{
+    position:absolute;bottom:90px;right:14px;pointer-events:auto;
+    background:rgba(0,0,0,0.55);color:#ddd;border:1px solid rgba(255,255,255,0.25);
+    padding:10px 14px;border-radius:6px;cursor:pointer;font-family:inherit;font-size:0.8rem;
+    backdrop-filter:blur(4px);
+  }
+  #acaoJaca{
+    position:absolute;bottom:24px;left:50%;transform:translateX(-50%);
+    pointer-events:auto;cursor:pointer;
+    background:linear-gradient(180deg,#5a6a2a,#38461a);
+    border:2px solid var(--ouro);border-radius:10px;
+    color:#fff;font-family:inherit;font-size:1.05rem;letter-spacing:0.04em;
+    padding:14px 28px;
+    box-shadow:0 6px 22px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.18);
+    transition:transform .1s ease;
+    max-width:90vw;
+  }
+  #acaoJaca:hover{background:linear-gradient(180deg,#6d8033,#43531f);}
+  #acaoJaca:active{transform:translateX(-50%) translateY(2px) scale(0.98);}
+  #dica{position:absolute;bottom:74px;left:50%;transform:translateX(-50%);font-size:0.75rem;color:rgba(255,255,255,0.55);text-align:center;}
+
+  /* ===== FRASES SATÍRICAS ===== */
+  #frase{
+    position:absolute;top:42%;left:50%;transform:translate(-50%,-50%);
+    background:rgba(0,0,0,0.6);border:1px solid rgba(232,197,71,0.35);
+    padding:18px 26px;border-radius:8px;max-width:80vw;
+    font-style:italic;font-size:clamp(1rem,3vw,1.4rem);color:#f2e9c8;text-align:center;
+    opacity:0;transition:opacity .5s ease;
+    box-shadow:0 8px 30px rgba(0,0,0,0.7);
+    pointer-events:none;
+  }
+  #frase.show{opacity:1;}
+
+  /* ===== MODO REALISTA ===== */
+  #realista{
+    position:fixed;inset:0;z-index:60;background:#000;display:none;
+    align-items:center;justify-content:center;
+  }
+  #realista.ativo{display:flex;}
+  #realista .aviso{
+    position:absolute;bottom:18px;left:18px;
+    font-size:0.8rem;color:#222;letter-spacing:0.04em;
+  }
+  #realista .centro{
+    font-size:0.75rem;color:#111;letter-spacing:0.3em;text-transform:uppercase;
+  }
+
+  /* ===== POPUP DE CONQUISTA (estilo Steam) ===== */
+  #popup{
+    position:fixed;bottom:18px;right:18px;z-index:80;
+    display:flex;align-items:center;gap:12px;
+    background:linear-gradient(135deg,rgba(20,28,14,0.97),rgba(10,14,8,0.97));
+    border:1px solid var(--ouro);border-radius:8px;padding:10px 14px;
+    min-width:280px;max-width:340px;
+    box-shadow:0 8px 30px rgba(0,0,0,0.7), 0 0 18px rgba(232,197,71,0.25);
+    transform:translateX(420px);opacity:0;transition:transform .5s cubic-bezier(.2,.8,.2,1),opacity .5s ease;
+    pointer-events:none;
+  }
+  #popup.show{transform:translateX(0);opacity:1;}
+  #popup .icon{
+    width:44px;height:44px;flex:0 0 auto;border-radius:6px;
+    background:radial-gradient(circle at 35% 30%,#f5d76e,#9c7d1e);
+    display:flex;align-items:center;justify-content:center;font-size:1.4rem;
+    border:1px solid rgba(255,255,255,0.25);
+  }
+  #popup .txt{font-size:0.78rem;line-height:1.25;}
+  #popup .txt .label{color:var(--ouro);font-size:0.68rem;letter-spacing:0.18em;text-transform:uppercase;}
+  #popup .txt .title{color:#fff;font-weight:bold;font-size:0.92rem;margin-top:2px;}
+  #popup .txt .desc{color:#aeb89c;margin-top:2px;font-size:0.72rem;}
+
+  /* ===== MODAL DE CONQUISTAS ===== */
+  #modal{
+    position:fixed;inset:0;z-index:90;display:none;
+    align-items:center;justify-content:center;
+    background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);
+  }
+  #modal.ativo{display:flex;}
+  .modal-box{
+    width:min(620px,92vw);max-height:86vh;overflow-y:auto;
+    background:linear-gradient(180deg,#1c2410,#0e140a);
+    border:1px solid rgba(232,197,71,0.4);border-radius:10px;padding:22px;
+    box-shadow:0 16px 50px rgba(0,0,0,0.8);
+  }
+  .modal-box h2{color:var(--ouro);letter-spacing:0.06em;margin-bottom:4px;font-size:1.4rem;}
+  .modal-box .sub{color:#8fa37a;font-size:0.78rem;margin-bottom:16px;}
+  .conq-item{
+    display:flex;align-items:center;gap:14px;padding:12px;border-radius:6px;
+    border:1px solid rgba(255,255,255,0.06);margin-bottom:8px;background:rgba(0,0,0,0.3);
+  }
+  .conq-item.locked{opacity:0.5;}
+  .conq-item .ic{
+    width:46px;height:46px;border-radius:6px;flex:0 0 auto;
+    display:flex;align-items:center;justify-content:center;font-size:1.5rem;
+    background:radial-gradient(circle at 35% 30%,#f5d76e,#9c7d1e);
+    border:1px solid rgba(255,255,255,0.2);
+  }
+  .conq-item.locked .ic{background:radial-gradient(circle at 35% 30%,#555,#222);filter:grayscale(1);}
+  .conq-item .info .t{color:#fff;font-weight:bold;font-size:0.95rem;}
+  .conq-item .info .d{color:#9aa988;font-size:0.8rem;margin-top:2px;}
+  .modal-box .fechar{
+    margin-top:14px;width:100%;padding:10px;border-radius:6px;cursor:pointer;
+    background:#2a3a18;border:1px solid rgba(232,197,71,0.4);color:#fff;font-family:inherit;font-size:0.9rem;
+  }
+  .modal-box .fechar:hover{background:#38491f;}
+
+  canvas{display:block;}
+
+  /* tela de carregamento */
+  #loader{position:fixed;inset:0;z-index:200;background:#000;display:flex;align-items:center;justify-content:center;color:#8fa37a;font-size:0.9rem;letter-spacing:0.2em;}
+</style>
+</head>
+<body>
+
+<!-- ============ MENU INICIAL ============ -->
+<div id="menu">
+  <div class="selo">PRODUTORA RAÍZ DO MATO™</div>
+  <h1 class="titulo">JACA<span class="linha2">SIMULATOR</span></h1>
+  <p class="subtitulo">O simulador mais realista de ser uma jaca já feito. Você não anda. Você não pula. Você não ataca. Você apenas existe.</p>
+  <div class="botoes-menu">
+    <button class="btn-aaa" id="btnArcade">Modo Arcade (3ª Pessoa)<small>Câmera orbital ao redor da jaca sob a jaqueira</small></button>
+    <button class="btn-aaa" id="btnRealistaMenu">Modo Realista (1ª Pessoa)<small>A experiência verdadeira de ser uma fruta sem olhos</small></button>
+    <button class="btn-aaa" id="btnVerConquistas">Conquistas<small>Veja seu progresso existencial</small></button>
+  </div>
+  <div class="rodape-menu">v1.0 · Feito com Three.js + Web Audio API · 100% no navegador</div>
+</div>
+
+<!-- ============ HUD DO JOGO ============ -->
+<div id="hud">
+  <div id="cronometro">⏳ Existindo há: <b id="tempo">0s</b></div>
+  <button id="btnVoltar">⬅ Menu</button>
+  <button id="btnConquistas">🏆 Conquistas</button>
+  <button id="btnRealista">👁 Modo Realista</button>
+  <div id="dica">Arraste para girar a câmera · Scroll para zoom</div>
+  <button id="acaoJaca">Fazer o que uma jaca faz</button>
+  <div id="frase"></div>
+</div>
+
+<!-- ============ MODO REALISTA ============ -->
+<div id="realista">
+  <div class="centro"></div>
+  <div class="aviso">Modo Realista Ativo — Pressione ESC para voltar</div>
+</div>
+
+<!-- ============ POPUP CONQUISTA ============ -->
+<div id="popup">
+  <div class="icon" id="popupIcon">🏆</div>
+  <div class="txt">
+    <div class="label">Conquista Desbloqueada</div>
+    <div class="title" id="popupTitle"></div>
+    <div class="desc" id="popupDesc"></div>
+  </div>
+</div>
+
+<!-- ============ MODAL CONQUISTAS ============ -->
+<div id="modal">
+  <div class="modal-box">
+    <h2>🏆 Conquistas</h2>
+    <div class="sub" id="conqResumo"></div>
+    <div id="conqLista"></div>
+    <button class="fechar" id="btnFecharModal">Fechar</button>
+  </div>
+</div>
+
+<div id="loader">CARREGANDO A JACA...</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ===================================================================
+//  ESTADO GLOBAL
+// ===================================================================
+const State = {
+  modo: 'menu',          // 'menu' | 'arcade' | 'realista'
+  tExistindo: 0,         // segundos da sessão atual
+  tTotal: 0,             // segundos acumulados (localStorage)
+  acaoCount: 0,
+  viuNoite: false,
+  iniciou: false,
+};
+
+// carrega persistência
+try {
+  State.tTotal = parseFloat(localStorage.getItem('jaca_tempo_total')) || 0;
+} catch(e){ State.tTotal = 0; }
+
+let unlocked = {};
+try { unlocked = JSON.parse(localStorage.getItem('jaca_conquistas')) || {}; } catch(e){ unlocked = {}; }
+
+// ===================================================================
+//  CONQUISTAS
+// ===================================================================
+const ACHIEVEMENTS = [
+  { id:'primeiros10',  icon:'🌱', title:'Primeiros 10 Segundos',     desc:'Você começou a existir. Parabéns.' },
+  { id:'visao',        icon:'👁',  title:'Visão Verdadeira',          desc:'Entrou no Modo Realista e viu o nada.' },
+  { id:'filosofo',     icon:'🧠', title:'Filósofo da Mata',          desc:'Permaneceu 1 minuto parado, existindo.' },
+  { id:'noturna',      icon:'🌙', title:'Jaca Noturna',              desc:'Sobreviveu até anoitecer.' },
+  { id:'meia',         icon:'🌗', title:'Meia-Jaca',                 desc:'Existiu por 5 minutos seguidos.' },
+  { id:'selvagem',     icon:'🌳', title:'Jaca Selvagem',             desc:'10 minutos de pura existência.' },
+  { id:'pensador',     icon:'💭', title:'Pensador',                  desc:'Fez o que uma jaca faz 10 vezes.' },
+  { id:'plena',        icon:'☀️', title:'Existência Plena',          desc:'Acumulou 1 hora total de existência.' },
+  { id:'mestre',       icon:'👑', title:'Mestre Jaca',               desc:'Desbloqueou todas as outras conquistas.' },
+];
+
+function desbloquear(id){
+  if(unlocked[id]) return;
+  const a = ACHIEVEMENTS.find(x=>x.id===id);
+  if(!a) return;
+  unlocked[id] = true;
+  try { localStorage.setItem('jaca_conquistas', JSON.stringify(unlocked)); } catch(e){}
+  mostrarPopup(a);
+  // checa mestre
+  const outras = ACHIEVEMENTS.filter(x=>x.id!=='mestre');
+  if(outras.every(x=>unlocked[x.id]) && !unlocked['mestre']){
+    setTimeout(()=>desbloquear('mestre'), 1200);
+  }
+}
+
+function mostrarPopup(a){
+  const p = document.getElementById('popup');
+  document.getElementById('popupIcon').textContent = a.icon;
+  document.getElementById('popupTitle').textContent = a.title;
+  document.getElementById('popupDesc').textContent = a.desc;
+  p.classList.add('show');
+  clearTimeout(mostrarPopup._t);
+  mostrarPopup._t = setTimeout(()=>p.classList.remove('show'), 4200);
+}
+
+function renderModalConquistas(){
+  const lista = document.getElementById('conqLista');
+  lista.innerHTML = '';
+  let n=0;
+  for(const a of ACHIEVEMENTS){
+    const ok = !!unlocked[a.id];
+    if(ok) n++;
+    const div = document.createElement('div');
+    div.className = 'conq-item' + (ok?'':' locked');
+    div.innerHTML = `<div class="ic">${ok?a.icon:'🔒'}</div>
+      <div class="info"><div class="t">${a.title}</div><div class="d">${a.desc}</div></div>`;
+    lista.appendChild(div);
+  }
+  document.getElementById('conqResumo').textContent = `${n}/${ACHIEVEMENTS.length} desbloqueadas · ${fmtTempo(State.tTotal)} existidos no total`;
+}
+function fmtTempo(s){
+  s=Math.floor(s);
+  if(s<60) return s+'s';
+  if(s<3600) return Math.floor(s/60)+'min '+(s%60)+'s';
+  const h=Math.floor(s/3600), m=Math.floor((s%3600)/60);
+  return h+'h '+m+'min';
+}
+
+// ===================================================================
+//  FRASES SATÍRICAS
+// ===================================================================
+const FRASES = [
+  "Você continua sendo uma jaca.",
+  "Uma formiga passou perto. Você não reagiu.",
+  "Você amadureceu 0,001%.",
+  "Ninguém veio te colher. Ainda.",
+  "O tempo passa. Você não.",
+  "Ser ou não ser uma jaca? Você é.",
+  "Você sente o peso da gravidade. Novamente.",
+  "Uma folha caiu perto. Não em você.",
+  "Você reflete sobre sua existência raiz.",
+  "O vento mudou. Você não.",
+  "Alguém, em algum lugar, comeu uma jaca. Você não.",
+  "Você espera. Você é boa em esperar.",
+  "A terra é morna. Você é morna.",
+  "Você não tem opinião. E está tudo bem.",
+  "0,0003% mais perto do chão.",
+];
+let fraseIdx=0, fraseTimer=null;
+function fraseJaca(){
+  const f = document.getElementById('frase');
+  f.textContent = FRASES[Math.floor(Math.random()*FRASES.length)];
+  f.classList.add('show');
+  clearTimeout(fraseTimer);
+  fraseTimer = setTimeout(()=>f.classList.remove('show'), 3200);
+  State.acaoCount++;
+  if(State.acaoCount>=10) desbloquear('pensador');
+}
+
+// ===================================================================
+//  ÁUDIO PROCEDURAL (Web Audio API)
+// ===================================================================
+let audioCtx=null, audioNodes={};
+function initAudio(){
+  if(audioCtx) { resumeAudio(); return; }
+  try{
+    audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    // --- VENTO (ruído filtrado) ---
+    const ventoBufSize = audioCtx.sampleRate*4;
+    const ventoBuf = audioCtx.createBuffer(1, ventoBufSize, audioCtx.sampleRate);
+    const data = ventoBuf.getChannelData(0);
+    let last=0;
+    for(let i=0;i<ventoBufSize;i++){ // brown noise
+      const w = Math.random()*2-1;
+      last = (last + 0.02*w)/1.02;
+      data[i] = last*3.5;
+    }
+    const ventoSrc = audioCtx.createBufferSource();
+    ventoSrc.buffer = ventoBuf; ventoSrc.loop=true;
+    const ventoFilter = audioCtx.createBiquadFilter();
+    ventoFilter.type='lowpass'; ventoFilter.frequency.value=420; ventoFilter.Q.value=0.6;
+    const ventoGain = audioCtx.createGain(); ventoGain.gain.value=0.06;
+    ventoSrc.connect(ventoFilter).connect(ventoGain).connect(audioCtx.destination);
+    ventoSrc.start();
+    audioNodes.vento = ventoGain;
+    audioNodes.ventoFilter = ventoFilter;
+    // --- GRILLOS (à noite) ---
+    audioNodes.grilosGain = audioCtx.createGain();
+    audioNodes.grilosGain.gain.value=0;
+    audioNodes.grilosGain.connect(audioCtx.destination);
+    // --- agendadores ---
+    agendarPássaros();
+    agendarGrilos();
+  }catch(e){ console.warn('Audio indisponível', e); }
+}
+function resumeAudio(){ if(audioCtx && audioCtx.state==='suspended') audioCtx.resume(); }
+
+// BEM-TE-VI: assobio descendente "bem-te-vi"
+function tocarBemTeVi(){
+  if(!audioCtx) return;
+  const now = audioCtx.currentTime;
+  const base = 1800 + Math.random()*300;
+  const seq = [0, 0.18, 0.34]; // três sílabas
+  seq.forEach((t,i)=>{
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type='sine';
+    const f = base * (i===2?0.8:1);
+    o.frequency.setValueAtTime(f, now+t);
+    o.frequency.exponentialRampToValueAtTime(f*0.6, now+t+0.14);
+    g.gain.setValueAtTime(0, now+t);
+    g.gain.linearRampToValueAtTime(0.12, now+t+0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, now+t+0.16);
+    o.connect(g).connect(audioCtx.destination);
+    o.start(now+t); o.stop(now+t+0.18);
+  });
+}
+function agendarPássaros(){
+  if(!audioCtx) return;
+  const proximo = 4000 + Math.random()*9000;
+  setTimeout(()=>{
+    if(State.modo==='arcade' && diaNoite>0.15 && diaNoite<0.85){ // só de dia
+      tocarBemTeVi();
+    }
+    agendarPássaros();
+  }, proximo);
+}
+// GRILLO: pulso agudo rítmico
+function agendarGrilos(){
+  if(!audioCtx) return;
+  setTimeout(()=>{
+    if(State.modo==='arcade' && diaNoite<0.25){ // só à noite
+      const now=audioCtx.currentTime;
+      for(let i=0;i<4;i++){
+        const o=audioCtx.createOscillator(); const g=audioCtx.createGain();
+        o.type='square'; o.frequency.value=4800+Math.random()*200;
+        const t=now+i*0.12;
+        g.gain.setValueAtTime(0,t);
+        g.gain.linearRampToValueAtTime(0.018,t+0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001,t+0.05);
+        o.connect(g).connect(audioCtx.destination);
+        o.start(t); o.stop(t+0.06);
+      }
+    }
+    agendarGrilos();
+  }, 600);
+}
+
+// ===================================================================
+//  CENA 3D (Three.js)
+// ===================================================================
+let scene, camera, renderer, controls;
+let jacka, jaqueira, sol, luzSol, luzAmb, luzCeu;
+let ceuShader, nuvens=[], particulas, estrelas;
+let clock;
+let diaNoite = 0.15;        // 0=meia-noite, 0.25=meio-dia (sol a pino), 0.5=pôr do sol, 0.75=madrugada
+let velocidadeDia = 0.005;  // por segundo (ciclo ~3.3min)
+let grupoGiroJacka;
+
+function initThree(){
+  if(renderer) return;
+  scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(0x9bb8a0, 18, 80);
+
+  camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 0.1, 500);
+  camera.position.set(2.8, 1.7, 4.0);
+
+  renderer = new THREE.WebGLRenderer({antialias:true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+  document.body.appendChild(renderer.domElement);
+
+  controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.minDistance = 1.8;
+  controls.maxDistance = 18;
+  controls.maxPolarAngle = Math.PI*0.49;
+  controls.target.set(0, 1.3, 0);
+
+  clock = new THREE.Clock();
+
+  construirCenario();
+  construirCeu();
+  construirNuvens();
+  construirParticulas();
+  construirEstrelas();
+
+  addEventListener('resize', onResize);
+  animate();
+}
+
+function onResize(){
+  if(!renderer) return;
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+}
+
+// ---- CENÁRIO: chão, jaqueira, jaca ----
+function construirCenario(){
+  // chão de grama
+  const chaoGeo = new THREE.CircleGeometry(60, 64);
+  const chaoMat = new THREE.MeshStandardMaterial({color:0x3f6b32, roughness:1.0});
+  // perturbação leve
+  const pos = chaoGeo.attributes.position;
+  for(let i=0;i<pos.count;i++){
+    const y = pos.getY(i);
+    if(Math.abs(y)<59){
+      pos.setZ(i, (Math.random()-0.5)*0.3 + Math.sin(pos.getX(i)*0.6)*0.1);
+    }
+  }
+  chaoGeo.computeVertexNormals();
+  const chao = new THREE.Mesh(chaoGeo, chaoMat);
+  chao.rotation.x = -Math.PI/2;
+  chao.receiveShadow = true;
+  scene.add(chao);
+
+  // tufos de grama aleatórios
+  const gramaMat = new THREE.MeshStandardMaterial({color:0x5b8a3e, roughness:1});
+  const tufoGeo = new THREE.ConeGeometry(0.06, 0.35, 4);
+  for(let i=0;i<260;i++){
+    const r = 1.5 + Math.random()*30;
+    const a = Math.random()*Math.PI*2;
+    const tufo = new THREE.Mesh(tufoGeo, gramaMat);
+    tufo.position.set(Math.cos(a)*r, 0.17, Math.sin(a)*r);
+    tufo.rotation.y = Math.random()*Math.PI;
+    tufo.rotation.z = (Math.random()-0.5)*0.3;
+    scene.add(tufo);
+  }
+
+  // pedras decorativas
+  const pedraMat = new THREE.MeshStandardMaterial({color:0x6b6b6b, roughness:0.9});
+  for(let i=0;i<8;i++){
+    const pedra = new THREE.Mesh(new THREE.DodecahedronGeometry(0.3+Math.random()*0.5), pedraMat);
+    const a=Math.random()*Math.PI*2, r=4+Math.random()*8;
+    pedra.position.set(Math.cos(a)*r, 0.1, Math.sin(a)*r);
+    pedra.rotation.set(Math.random(),Math.random(),Math.random());
+    scene.add(pedra);
+  }
+
+  // JAQUEIRA
+  jaqueira = new THREE.Group();
+  // tronco
+  const troncoGeo = new THREE.CylinderGeometry(0.35, 0.55, 5.5, 12);
+  const troncoMat = new THREE.MeshStandardMaterial({color:0x5b3a1a, roughness:0.95});
+  const tronco = new THREE.Mesh(troncoGeo, troncoMat);
+  tronco.position.set(-3.5, 2.75, -3);
+  tronco.castShadow=true; tronco.receiveShadow=true;
+  // textura irregular do tronco
+  const tp = troncoGeo.attributes.position;
+  for(let i=0;i<tp.count;i++){
+    const y = tp.getY(i);
+    tp.setX(i, tp.getX(i) + Math.sin(y*3)*0.04);
+    tp.setZ(i, tp.getZ(i) + Math.cos(y*2.5)*0.04);
+  }
+  troncoGeo.computeVertexNormals();
+  jaqueira.add(tronco);
+  // copa (folhas)
+  const folhaMat = new THREE.MeshStandardMaterial({color:0x2f5a22, roughness:0.85});
+  for(let i=0;i<7;i++){
+    const r = 1.6 + Math.random()*0.6;
+    const bola = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), folhaMat);
+    const a = Math.random()*Math.PI*2;
+    bola.position.set(-3.5 + Math.cos(a)*1.4, 5.8 + (Math.random()-0.5)*1.2, -3 + Math.sin(a)*1.4);
+    bola.scale.y = 0.7;
+    bola.castShadow=true;
+    jaqueira.add(bola);
+  }
+  scene.add(jaqueira);
+
+  // JACA (maior, encostada no chão)
+  jacka = criarJaca();
+  jacka.position.set(0, 1.45, 0);
+  jacka.castShadow = true;
+  jacka.traverse(o=>{ if(o.isMesh){o.castShadow=true;o.receiveShadow=true;} });
+  // grupo para giro leve
+  grupoGiroJacka = new THREE.Group();
+  grupoGiroJacka.position.copy(jacka.position);
+  jacka.position.set(0,0,0);
+  grupoGiroJacka.add(jacka);
+  scene.add(grupoGiroJacka);
+
+  // LUZES
+  luzAmb = new THREE.HemisphereLight(0xbfd6ff, 0x556b2f, 0.75);
+  scene.add(luzAmb);
+  // SOL visível no céu (esfera brilhante, sem receber luz)
+  sol = new THREE.Mesh(
+    new THREE.SphereGeometry(3.5, 24, 16),
+    new THREE.MeshBasicMaterial({color:0xfff0c0, fog:false})
+  );
+  sol.position.set(20, 30, 12);
+  scene.add(sol);
+
+  luzSol = new THREE.DirectionalLight(0xfff2cc, 1.2);
+  luzSol.castShadow = true;
+  luzSol.shadow.mapSize.set(2048,2048);
+  luzSol.shadow.camera.left=-12; luzSol.shadow.camera.right=12;
+  luzSol.shadow.camera.top=12; luzSol.shadow.camera.bottom=-12;
+  luzSol.shadow.bias = -0.0005;
+  scene.add(luzSol);
+  scene.add(luzSol.target);
+}
+
+// modelo de jaca: corpo oval irregular + espinhos/gomos + cabo
+function criarJaca(){
+  const grupo = new THREE.Group();
+  const raio = 1.3;
+
+  // corpo principal (esfera achatada, distorcida)
+  const corpoGeo = new THREE.SphereGeometry(raio, 48, 36);
+  const pos = corpoGeo.attributes.position;
+  for(let i=0;i<pos.count;i++){
+    const x=pos.getX(i), y=pos.getY(i), z=pos.getZ(i);
+    // achata e alonga (forma oval típica da jaca)
+    const ny = y*1.25;
+    // distorção irregular
+    const n = Math.sin(x*7)*0.04 + Math.cos(z*6)*0.04 + Math.sin((x+z)*9)*0.03;
+    const len = Math.sqrt(x*x+ny*ny+z*z) || 1;
+    const f = 1 + n/raio;
+    pos.setX(i, x*f);
+    pos.setY(i, ny*f);
+    pos.setZ(i, z*f);
+  }
+  corpoGeo.computeVertexNormals();
+  const corpoMat = new THREE.MeshStandardMaterial({
+    color:0x8fa33a, roughness:0.75, metalness:0.0,
+    flatShading:false,
+  });
+  // leve variação de cor (amarelo em alguns gomos) via segundo material não é trivial;
+  // usamos vertexColors
+  const cores = new Float32Array(pos.count*3);
+  const cBase = new THREE.Color(0x8fa33a);
+  const cAmad = new THREE.Color(0xc9b532);
+  for(let i=0;i<pos.count;i++){
+    const y = pos.getY(i);
+    const mist = Math.max(0, (y+0.6)/1.8) * 0.5;
+    const c = cBase.clone().lerp(cAmad, mist * (0.4+Math.random()*0.4));
+    cores[i*3]=c.r; cores[i*3+1]=c.g; cores[i*3+2]=c.b;
+  }
+  corpoGeo.setAttribute('color', new THREE.BufferAttribute(cores,3));
+  corpoMat.vertexColors = true;
+  const corpo = new THREE.Mesh(corpoGeo, corpoMat);
+  grupo.add(corpo);
+
+  // ESPPINHOS/GOMOS: pequenos cones distribuídos (textura típica da jaca)
+  const espinhoGeo = new THREE.ConeGeometry(0.09, 0.24, 6);
+  const espinhoMat = new THREE.MeshStandardMaterial({color:0x6f7e2e, roughness:0.7, flatShading:true});
+  const nEsp = 180;
+  const inst = new THREE.InstancedMesh(espinhoGeo, espinhoMat, nEsp);
+  const dummy = new THREE.Object3D();
+  const phi = Math.PI*(3-Math.sqrt(5));
+  for(let i=0;i<nEsp;i++){
+    let y = 1 - (i/(nEsp-1))*2;
+    const r = Math.sqrt(1-y*y);
+    const th = phi*i;
+    let x = Math.cos(th)*r, z = Math.sin(th)*r;
+    // mapear para a forma oval do corpo
+    x*=raio; y*=raio*1.25; z*=raio;
+    const nlen = Math.sqrt(x*x+y*y+z*z)||1;
+    const nx=x/nlen, ny=y/nlen, nz=z/nlen;
+    dummy.position.set(nx*raio*1.02, ny, nz*raio*1.02);
+    dummy.lookAt(dummy.position.x+nx, dummy.position.y+ny, dummy.position.z+nz);
+    dummy.rotation.z += Math.random()*0.3;
+    dummy.scale.setScalar(0.8+Math.random()*0.6);
+    dummy.updateMatrix();
+    inst.setMatrixAt(i, dummy.matrix);
+  }
+  inst.castShadow=true;
+  grupo.add(inst);
+
+  // CABO (pedúnculo) no topo
+  const caboGeo = new THREE.CylinderGeometry(0.05, 0.08, 0.4, 8);
+  const caboMat = new THREE.MeshStandardMaterial({color:0x4a5a20, roughness:0.8});
+  const cabo = new THREE.Mesh(caboGeo, caboMat);
+  cabo.position.set(0.1, raio*1.25+0.15, 0.05);
+  cabo.rotation.z = 0.3;
+  grupo.add(cabo);
+
+  return grupo;
+}
+
+// ---- CÉU (shader gradiente) ----
+function construirCeu(){
+  const geo = new THREE.SphereGeometry(200, 32, 16);
+  const mat = new THREE.ShaderMaterial({
+    side: THREE.BackSide,
+    uniforms:{
+      topColor:{value:new THREE.Color(0x2a6fb0)},
+      bottomColor:{value:new THREE.Color(0xbfe0ff)},
+      offset:{value:8.0},
+      exponent:{value:0.7},
+    },
+    vertexShader:`
+      varying vec3 vWorldPosition;
+      void main(){
+        vec4 wp = modelMatrix*vec4(position,1.0);
+        vWorldPosition = wp.xyz;
+        gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0);
+      }`,
+    fragmentShader:`
+      uniform vec3 topColor; uniform vec3 bottomColor;
+      uniform float offset; uniform float exponent;
+      varying vec3 vWorldPosition;
+      void main(){
+        float h = normalize(vWorldPosition+vec3(0.0,offset,0.0)).y;
+        gl_FragColor = vec4(mix(bottomColor,topColor,max(pow(max(h,0.0),exponent),0.0)),1.0);
+      }`,
+  });
+  ceuShader = mat;
+  const ceu = new THREE.Mesh(geo, mat);
+  scene.add(ceu);
+}
+
+// ---- NUVENS ----
+function construirNuvens(){
+  const nuvemMat = new THREE.MeshStandardMaterial({color:0xffffff, transparent:true, opacity:0.85, roughness:1, metalness:0, depthWrite:false});
+  for(let i=0;i<7;i++){
+    const g = new THREE.Group();
+    const n = 3+Math.floor(Math.random()*3);
+    for(let j=0;j<n;j++){
+      const s = 2+Math.random()*2.5;
+      const bola = new THREE.Mesh(new THREE.SphereGeometry(s,10,8), nuvemMat.clone());
+      bola.position.set(j*2.4 + (Math.random()-0.5), (Math.random()-0.5)*0.6, (Math.random()-0.5)*1.5);
+      bola.scale.y = 0.55;
+      g.add(bola);
+    }
+    const a = Math.random()*Math.PI*2;
+    const r = 35+Math.random()*25;
+    g.position.set(Math.cos(a)*r, 28+Math.random()*12, Math.sin(a)*r);
+    g.userData.vel = 0.3+Math.random()*0.4;
+    scene.add(g);
+    nuvens.push(g);
+  }
+}
+
+// ---- PARTÍCULAS (pólen/poeira) ----
+function construirParticulas(){
+  const n=400;
+  const geo = new THREE.BufferGeometry();
+  const positions = new Float32Array(n*3);
+  for(let i=0;i<n;i++){
+    positions[i*3] = (Math.random()-0.5)*16;
+    positions[i*3+1] = Math.random()*5;
+    positions[i*3+2] = (Math.random()-0.5)*16;
+  }
+  geo.setAttribute('position', new THREE.BufferAttribute(positions,3));
+  const mat = new THREE.PointsMaterial({color:0xfff4c2, size:0.04, transparent:true, opacity:0.7, depthWrite:false});
+  particulas = new THREE.Points(geo, mat);
+  scene.add(particulas);
+}
+
+// ---- ESTRELAS ----
+function construirEstrelas(){
+  const n=900;
+  const geo = new THREE.BufferGeometry();
+  const positions = new Float32Array(n*3);
+  for(let i=0;i<n;i++){
+    const v = new THREE.Vector3().randomDirection().multiplyScalar(180);
+    if(v.y<0) v.y = -v.y; // só hemisfério superior
+    positions[i*3]=v.x; positions[i*3+1]=v.y; positions[i*3+2]=v.z;
+  }
+  geo.setAttribute('position', new THREE.BufferAttribute(positions,3));
+  const mat = new THREE.PointsMaterial({color:0xffffff, size:0.6, transparent:true, opacity:0, depthWrite:false});
+  estrelas = new THREE.Points(geo, mat);
+  scene.add(estrelas);
+}
+
+// ---- CICLO DIA/NOITE ----
+const cores = {
+  diaTop:new THREE.Color(0x2a6fb0), diaBot:new THREE.Color(0xbfe0ff),
+  porTop:new THREE.Color(0x3a2a5a), porBot:new THREE.Color(0xff8a3a),
+  noiTop:new THREE.Color(0x05080f), noiBot:new THREE.Color(0x111826),
+};
+function atualizarDiaNoite(){
+  // diaNoite em [0,1): 0=meia-noite, 0.25=amanhecer, 0.5=meio-dia, 0.75=pôr-do-sol
+  const ang = diaNoite*Math.PI*2; // sol ao redor
+  const solY = Math.sin(ang);
+  const solX = Math.cos(ang);
+  sol.position.set(solX*45, solY*45, 12);
+  sol.visible = solY > -0.05; // some abaixo do horizonte
+  luzSol.position.copy(sol.position);
+  luzSol.target.position.set(0,0,0);
+
+  // intensidade do sol
+  luzSol.intensity = Math.max(0.05, solY) * 1.3;
+  luzAmb.intensity = 0.4 + Math.max(0, solY)*0.5;
+
+  // cor do céu: interpola entre noite/por/do sol/dia
+  const k = solY; // -1..1
+  let top, bot;
+  if(k > 0.2){ // dia
+    const t = Math.min(1,(k-0.2)/0.8);
+    top = cores.diaTop.clone().lerp(cores.diaTop, 0); // dia
+    bot = cores.diaBot.clone();
+  } else if(k > -0.15){ // pôr/amanhecer
+    const t = (k+0.15)/0.35; // 0..1
+    top = cores.noiTop.clone().lerp(cores.porTop, t).lerp(cores.diaTop, Math.max(0,t-0.5)*2);
+    bot = cores.noiBot.clone().lerp(cores.porBot, t).lerp(cores.diaBot, Math.max(0,t-0.5)*2);
+  } else { // noite
+    top = cores.noiTop.clone(); bot = cores.noiBot.clone();
+  }
+  ceuShader.uniforms.topColor.value.copy(top);
+  ceuShader.uniforms.bottomColor.value.copy(bot);
+
+  // fog acompanha
+  scene.fog.color.copy(bot);
+  renderer.setClearColor(bot, 1);
+
+  // estrelas
+  const noite = Math.max(0, Math.min(1, (-k)/0.6));
+  estrelas.material.opacity = noite*0.9;
+
+  // cor do sol
+  luzSol.color.setHSL(0.1, 0.6, Math.max(0.3, solY*0.6));
+
+  // noturna
+  if(solY < -0.05){ State.viuNoite = true; desbloquear('noturna'); }
+}
+
+// ---- LOOP ----
+function animate(){
+  requestAnimationFrame(animate);
+  const dt = Math.min(0.05, clock.getDelta());
+
+  if(State.modo==='arcade'){
+    State.tExistindo += dt;
+    State.tTotal += dt;
+    // salva total a cada ~5s
+    if(Math.floor(State.tExistindo)%5===0){
+      try{ localStorage.setItem('jaca_tempo_total', State.tTotal); }catch(e){}
+    }
+    document.getElementById('tempo').textContent = fmtTempo(State.tExistindo);
+
+    // ciclo dia/noite
+    diaNoite = (diaNoite + velocidadeDia*dt) % 1;
+    atualizarDiaNoite();
+
+    // nuvens se movem
+    nuvens.forEach(g=>{
+      g.position.x += g.userData.vel*dt;
+      if(g.position.x>60) g.position.x=-60;
+    });
+    // partículas flutuando
+    const p = particulas.geometry.attributes.position;
+    for(let i=0;i<p.count;i++){
+      let y = p.getY(i) + dt*0.15;
+      if(y>5) y=0;
+      p.setY(i, y);
+    }
+    p.needsUpdate = true;
+    // leve balanço da jaca
+    grupoGiroJacka.rotation.z = Math.sin(State.tExistindo*0.4)*0.015;
+    grupoGiroJacka.position.y = 1.45 + Math.sin(State.tExistindo*0.6)*0.01;
+
+    // conquistas por tempo
+    if(State.tExistindo>=10) desbloquear('primeiros10');
+    if(State.tExistindo>=60) desbloquear('filosofo');
+    if(State.tExistindo>=300) desbloquear('meia');
+    if(State.tExistindo>=600) desbloquear('selvagem');
+    if(State.tTotal>=3600) desbloquear('plena');
+  }
+
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+// ===================================================================
+//  CONTROLE DE TELAS / MODOS
+// ===================================================================
+function mostrarMenu(){
+  State.modo='menu';
+  document.getElementById('menu').style.display='flex';
+  document.getElementById('hud').classList.remove('ativo');
+  document.getElementById('realista').classList.remove('ativo');
+}
+function entrarArcade(){
+  State.modo='arcade';
+  document.getElementById('menu').style.display='none';
+  document.getElementById('hud').classList.add('ativo');
+  document.getElementById('realista').classList.remove('ativo');
+  initThree();
+  initAudio();
+  resumeAudio();
+}
+function entrarRealista(){
+  State.modo='realista';
+  document.getElementById('realista').classList.add('ativo');
+  document.getElementById('hud').classList.remove('ativo');
+  document.getElementById('menu').style.display='none';
+  initAudio(); resumeAudio();
+  desbloquear('visao');
+}
+
+// ===================================================================
+//  EVENTOS
+// ===================================================================
+document.getElementById('btnArcade').onclick = entrarArcade;
+document.getElementById('btnRealistaMenu').onclick = entrarRealista;
+document.getElementById('btnVoltar').onclick = mostrarMenu;
+document.getElementById('btnRealista').onclick = entrarRealista;
+document.getElementById('acaoJaca').onclick = fraseJaca;
+document.getElementById('btnVerConquistas').onclick = ()=>{ renderModalConquistas(); document.getElementById('modal').classList.add('ativo'); };
+document.getElementById('btnConquistas').onclick = ()=>{ renderModalConquistas(); document.getElementById('modal').classList.add('ativo'); };
+document.getElementById('btnFecharModal').onclick = ()=>document.getElementById('modal').classList.remove('ativo');
+document.getElementById('modal').onclick = (e)=>{ if(e.target.id==='modal') document.getElementById('modal').classList.remove('ativo'); };
+
+addEventListener('keydown', (e)=>{
+  if(e.code==='Space' && State.modo==='arcade'){ e.preventDefault(); fraseJaca(); }
+  if(e.code==='Escape'){
+    if(State.modo==='realista'){ mostrarMenu(); }
+    else if(document.getElementById('modal').classList.contains('ativo')){ document.getElementById('modal').classList.remove('ativo'); }
+    else if(State.modo==='arcade'){ mostrarMenu(); }
+  }
+});
+
+// inicializa
+document.getElementById('loader').style.display='none';
+</script>
+</body>
+</html>
